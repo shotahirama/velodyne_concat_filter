@@ -6,7 +6,7 @@
 
   <maintainer email="vghjjj@gmail.com">shotahirama</maintainer>
 
-  <license>TODO</license>
+  <license>Apache 2.0</license>
 
   <buildtool_depend>catkin</buildtool_depend>
   <build_depend>geometry_msgs</build_depend>
