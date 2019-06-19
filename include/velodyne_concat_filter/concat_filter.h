@@ -33,10 +33,13 @@ class ConcatFilter : public nodelet::Nodelet
 {
 public:
   ConcatFilter();
+  ~ConcatFilter();
   virtual void onInit();
-  void callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const sensor_msgs::PointCloud2ConstPtr &msg2, const sensor_msgs::PointCloud2ConstPtr &msg3, const sensor_msgs::PointCloud2ConstPtr &msg4, const sensor_msgs::PointCloud2ConstPtr &msg5);
 
 private:
+  void callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const sensor_msgs::PointCloud2ConstPtr &msg2, const sensor_msgs::PointCloud2ConstPtr &msg3, const sensor_msgs::PointCloud2ConstPtr &msg4, const sensor_msgs::PointCloud2ConstPtr &msg5);
+  void topic_monitor();
+
   typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> SyncPolicyT;
   typedef pcl::PointCloud<pcl::PointXYZI> PointCloudT;
 
@@ -46,6 +49,9 @@ private:
   std::shared_ptr<message_filters::Synchronizer<SyncPolicyT>> sync_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
+  std::vector<std::string> topics_, current_topics_;
+  boost::shared_ptr<boost::thread> topic_monitor_thread_;
+  volatile bool running_;
 };
 }
 
