@@ -17,6 +17,9 @@
 #ifndef VELODYNE_CONCAT_FILTER_H_
 #define VELODYNE_CONCAT_FILTER_H_
 
+#include <mutex>
+#include <thread>
+#include <memory>
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -50,8 +53,9 @@ private:
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
   std::vector<std::string> topics_, current_topics_;
-  boost::shared_ptr<boost::thread> topic_monitor_thread_;
+  std::shared_ptr<std::thread> topic_monitor_thread_;
   volatile bool running_;
+  std::mutex mutex_;
 };
 }
 

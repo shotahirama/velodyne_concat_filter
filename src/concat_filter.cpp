@@ -42,16 +42,18 @@ void ConcatFilter::onInit()
   sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicyT>>(SyncPolicyT(10), *sub_[0], *sub_[1], *sub_[2], *sub_[3], *sub_[4]);
   sync_->registerCallback(boost::bind(&ConcatFilter::callback, this, _1, _2, _3, _4, _5));
   running_ = true;
-  topic_monitor_thread_ = boost::make_shared<boost::thread>(boost::bind(&ConcatFilter::topic_monitor, this));
+  topic_monitor_thread_ = std::make_shared<std::thread>(&ConcatFilter::topic_monitor, this);
+  topic_monitor_thread_->detach();
 }
 
 void ConcatFilter::callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const sensor_msgs::PointCloud2ConstPtr &msg2, const sensor_msgs::PointCloud2ConstPtr &msg3, const sensor_msgs::PointCloud2ConstPtr &msg4, const sensor_msgs::PointCloud2ConstPtr &msg5)
 {
+  size_t current_topics_size = current_topics_.size();
   std::vector<sensor_msgs::PointCloud2ConstPtr> msgs{msg1, msg2, msg3, msg4, msg5};
-  std::vector<PointCloudT::Ptr> clouds(msgs.size());
+  std::vector<PointCloudT::Ptr> clouds(current_topics_size);
   PointCloudT::Ptr concat_cloud = boost::make_shared<PointCloudT>();
   try {
-    for (size_t i = 0; i < msgs.size(); i++) {
+    for (size_t i = 0; i < current_topics_size; i++) {
       const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform("base_link", msgs[i]->header.frame_id, ros::Time(0), ros::Duration(0.1));
       sensor_msgs::PointCloud2 transform_cloud;
       tf2::doTransform(*msgs[i], transform_cloud, transformStamped);
@@ -78,7 +80,7 @@ void ConcatFilter::topic_monitor()
   while (running_) {
     std::vector<std::string> available_topics;
     for (auto topic : topics_) {
-      auto available_topic = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, ros::Duration(0.2));
+      auto available_topic = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, ros::Duration(0.3));
       if (!available_topic) {
         NODELET_WARN("%s is not available", topic.c_str());
       } else {
@@ -86,11 +88,12 @@ void ConcatFilter::topic_monitor()
       }
     }
 
-    std::sort(current_topics_.begin(), current_topics_.end());
+    auto current_topics_tmp = current_topics_;
+    std::sort(current_topics_tmp.begin(), current_topics_tmp.end());
     std::sort(available_topics.begin(), available_topics.end());
-    if (current_topics_ != available_topics) {
-      current_topics_ = available_topics;
+    if (current_topics_tmp != available_topics) {
       sync_.reset();
+      current_topics_ = available_topics;
       if (!current_topics_.empty()) {
         for (size_t i = 0; i < sub_.size(); i++) {
           if (i < current_topics_.size()) {
