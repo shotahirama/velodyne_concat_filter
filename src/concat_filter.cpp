@@ -32,14 +32,30 @@ ConcatFilter::~ConcatFilter()
 void ConcatFilter::onInit()
 {
   nh_ = getNodeHandle();
-  topics_ = {"/velodyne_front/velodyne_points", "/velodyne_rear/velodyne_points", "/velodyne_right/velodyne_points", "/velodyne_left/velodyne_points", "/velodyne_top/velodyne_points"};
+  if (!nh_.getParam("velodyne_topics", topics_)) {
+    topics_ = {"/velodyne_front/velodyne_points", "/velodyne_rear/velodyne_points", "/velodyne_right/velodyne_points", "/velodyne_left/velodyne_points", "/velodyne_top/velodyne_points"};
+  }
+  assert(2 <= topics_.size() && topics_.size() <= 5);
+  int synchronizer_queue_size;
+  if (!nh_.getParam("synchronizer_queue_size", synchronizer_queue_size)) {
+    synchronizer_queue_size = 10;
+  }
+  if (!nh_.getParam("wait_for_message_timeout", wait_for_message_timeout_)) {
+    wait_for_message_timeout_ = 0.3;
+  }
+  if (!nh_.getParam("topic_monitor_rate", topic_monitor_rate_)) {
+    topic_monitor_rate_ = 1;
+  }
+  if (!nh_.getParam("target_frame", target_frame_)) {
+    target_frame_ = "base_link";
+  }
   current_topics_ = topics_;
   concat_point_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("concat_points", 1);
   for (size_t i = 0; i < topics_.size(); i++) {
     auto sub = std::make_shared<message_filters::Subscriber<sensor_msgs::PointCloud2>>(nh_, topics_[i], 1);
     sub_.emplace_back(sub);
   }
-  sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicyT>>(SyncPolicyT(10), *sub_[0], *sub_[1], *sub_[2], *sub_[3], *sub_[4]);
+  sync_ = std::make_shared<message_filters::Synchronizer<SyncPolicyT>>(SyncPolicyT(synchronizer_queue_size), *sub_[0], *sub_[1], *sub_[2], *sub_[3], *sub_[4]);
   sync_->registerCallback(boost::bind(&ConcatFilter::callback, this, _1, _2, _3, _4, _5));
   running_ = true;
   topic_monitor_thread_ = std::make_shared<std::thread>(&ConcatFilter::topic_monitor, this);
@@ -54,7 +70,7 @@ void ConcatFilter::callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const 
   PointCloudT::Ptr concat_cloud = boost::make_shared<PointCloudT>();
   try {
     for (size_t i = 0; i < current_topics_size; i++) {
-      const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform("base_link", msgs[i]->header.frame_id, ros::Time(0), ros::Duration(0.1));
+      const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform(target_frame_, msgs[i]->header.frame_id, ros::Time(0), ros::Duration(0.1));
       sensor_msgs::PointCloud2 transform_cloud;
       tf2::doTransform(*msgs[i], transform_cloud, transformStamped);
       clouds[i] = boost::make_shared<PointCloudT>();
@@ -70,17 +86,17 @@ void ConcatFilter::callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const 
   sensor_msgs::PointCloud2 pubmsg;
   pcl::toROSMsg(*concat_cloud, pubmsg);
   pubmsg.header.stamp = ros::Time::now();
-  pubmsg.header.frame_id = "base_link";
+  pubmsg.header.frame_id = target_frame_;
   concat_point_pub_.publish(pubmsg);
 }
 
 void ConcatFilter::topic_monitor()
 {
-  ros::Rate rate(1);
+  ros::Rate rate(topic_monitor_rate_);
   while (running_) {
     std::vector<std::string> available_topics;
     for (auto topic : topics_) {
-      auto available_topic = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, ros::Duration(0.3));
+      auto available_topic = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, ros::Duration(wait_for_message_timeout_));
       if (!available_topic) {
         NODELET_WARN("%s is not available", topic.c_str());
       } else {

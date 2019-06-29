@@ -56,6 +56,9 @@ private:
   std::shared_ptr<std::thread> topic_monitor_thread_;
   volatile bool running_;
   std::mutex mutex_;
+  double wait_for_message_timeout_;
+  double topic_monitor_rate_;
+  std::string target_frame_;
 };
 }
 
