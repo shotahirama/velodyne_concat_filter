@@ -49,6 +49,7 @@ private:
   typedef pcl::PointCloud<pcl::PointXYZI> PointCloudT;
 
   ros::NodeHandle nh_;
+  ros::NodeHandle private_nh_;
   ros::Publisher concat_point_pub_;
   std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>>> sub_;
   std::shared_ptr<message_filters::Synchronizer<SyncPolicyT>> sync_;
