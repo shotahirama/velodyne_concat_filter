@@ -21,7 +21,6 @@
 #include <thread>
 #include <memory>
 #include <ros/ros.h>
-#include <nodelet/nodelet.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/sync_policies/approximate_time.h>
@@ -29,15 +28,18 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
+#include <tf2/transform_datatypes.h>
+#include <tf2_eigen/tf2_eigen.h>
 
 namespace velodyne_concat_filter
 {
-class ConcatFilter : public nodelet::Nodelet
-{
+class ConcatFilter{
 public:
   ConcatFilter();
+  ConcatFilter(ros::NodeHandle &nh);
   ~ConcatFilter();
-  virtual void onInit();
+  void initialize();
 
 private:
   void callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const sensor_msgs::PointCloud2ConstPtr &msg2, const sensor_msgs::PointCloud2ConstPtr &msg3, const sensor_msgs::PointCloud2ConstPtr &msg4, const sensor_msgs::PointCloud2ConstPtr &msg5);

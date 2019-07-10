@@ -1,5 +1,5 @@
 <library path="lib/libvelodyne_concat_filter">
-    <class name="velodyne_concat_filter/ConcatFilter" type="velodyne_concat_filter::ConcatFilter" base_class_type="nodelet::Nodelet">
+    <class name="velodyne_concat_filter/ConcatFilterNodelet" type="velodyne_concat_filter::ConcatFilterNodelet" base_class_type="nodelet::Nodelet">
         <description></description>
     </class>
 </library>

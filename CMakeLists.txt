@@ -27,8 +27,13 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
 )
 
+add_executable(velodyne_concat_filter_node
+  src/concat_filter_node.cpp src/concat_filter.cpp
+)
+target_link_libraries(velodyne_concat_filter_node ${catkin_LIBRARIES})
+
 add_library(${PROJECT_NAME}
-  src/concat_filter.cpp
+  src/concat_filter_nodelet.cpp src/concat_filter.cpp
 )
 target_link_libraries(${PROJECT_NAME}
   ${catkin_LIBRARIES}

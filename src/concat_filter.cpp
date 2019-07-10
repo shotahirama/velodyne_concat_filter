@@ -19,19 +19,23 @@
 namespace velodyne_concat_filter
 {
 ConcatFilter::ConcatFilter() : tf_listener_(tf_buffer_), running_(false) {}
+ConcatFilter::ConcatFilter(ros::NodeHandle &nh) : tf_listener_(tf_buffer_), running_(false)
+{
+  nh_ = nh;
+}
+
 ConcatFilter::~ConcatFilter()
 {
   if (running_) {
-    NODELET_INFO("shutting thread");
+    ROS_INFO("shutting thread");
     running_ = false;
     topic_monitor_thread_->join();
-    NODELET_INFO("thread shutdown");
+    ROS_INFO("thread shutdown");
   }
 }
 
-void ConcatFilter::onInit()
+void ConcatFilter::initialize()
 {
-  nh_ = getNodeHandle();
   if (!nh_.getParam("velodyne_topics", topics_)) {
     topics_ = {"/velodyne_front/velodyne_points", "/velodyne_rear/velodyne_points", "/velodyne_right/velodyne_points", "/velodyne_left/velodyne_points", "/velodyne_top/velodyne_points"};
   }
@@ -72,7 +76,7 @@ void ConcatFilter::callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const 
     for (size_t i = 0; i < current_topics_size; i++) {
       const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform(target_frame_, msgs[i]->header.frame_id, ros::Time(0), ros::Duration(0.1));
       sensor_msgs::PointCloud2 transform_cloud;
-      tf2::doTransform(*msgs[i], transform_cloud, transformStamped);
+      pcl_ros::transformPointCloud(tf2::transformToEigen(transformStamped.transform).matrix().cast<float>(), *msgs[i], transform_cloud);
       clouds[i] = boost::make_shared<PointCloudT>();
       pcl::fromROSMsg(transform_cloud, *clouds[i]);
     }
@@ -98,7 +102,7 @@ void ConcatFilter::topic_monitor()
     for (auto topic : topics_) {
       auto available_topic = ros::topic::waitForMessage<sensor_msgs::PointCloud2>(topic, ros::Duration(wait_for_message_timeout_));
       if (!available_topic) {
-        NODELET_WARN("%s is not available", topic.c_str());
+        ROS_WARN("%s is not available", topic.c_str());
       } else {
         available_topics.emplace_back(topic);
       }
@@ -120,13 +124,10 @@ void ConcatFilter::topic_monitor()
         }
         sync_.reset(new message_filters::Synchronizer<SyncPolicyT>(SyncPolicyT(10), *sub_[0], *sub_[1], *sub_[2], *sub_[3], *sub_[4]));
         sync_->registerCallback(boost::bind(&ConcatFilter::callback, this, _1, _2, _3, _4, _5));
-        NODELET_WARN("Switch callback");
+        ROS_WARN("Switch callback");
       }
     }
     rate.sleep();
   }
 }
 }
-
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(velodyne_concat_filter::ConcatFilter, nodelet::Nodelet);

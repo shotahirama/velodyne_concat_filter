@@ -2,5 +2,5 @@
     <arg name="manager_name" default="concat_filter_nodelet_manager"/>
 
     <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen"/>
-    <node pkg="nodelet" type="nodelet" name="concat_filter_nodelet" args="load velodyne_concat_filter/ConcatFilter $(arg manager_name)"/>
+    <node pkg="nodelet" type="nodelet" name="velodyne_concat_filter_nodelet" args="load velodyne_concat_filter/ConcatFilterNodelet $(arg manager_name)"/>
 </launch>
