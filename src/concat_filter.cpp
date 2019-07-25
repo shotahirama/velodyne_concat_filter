@@ -18,7 +18,7 @@
 
 namespace velodyne_concat_filter
 {
-ConcatFilter::ConcatFilter() : tf_listener_(tf_buffer_), running_(false) {}
+ConcatFilter::ConcatFilter() : private_nh_("~"), tf_listener_(tf_buffer_), running_(false) {}
 ConcatFilter::ConcatFilter(ros::NodeHandle &nh, ros::NodeHandle &private_nh) : tf_listener_(tf_buffer_), running_(false)
 {
   nh_ = nh;
