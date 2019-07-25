@@ -17,7 +17,8 @@
 #include <ros/ros.h>
 #include <velodyne_concat_filter/concat_filter.h>
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[])
+{
   ros::init(argc, argv, "velodyne_concat_filter");
   velodyne_concat_filter::ConcatFilter cf;
   cf.initialize();

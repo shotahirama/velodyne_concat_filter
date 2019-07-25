@@ -34,35 +34,37 @@
 
 namespace velodyne_concat_filter
 {
-class ConcatFilter{
+class ConcatFilter
+{
 public:
   ConcatFilter();
-  ConcatFilter(ros::NodeHandle &nh);
+  ConcatFilter(ros::NodeHandle &nh, ros::NodeHandle &private_nh);
   ~ConcatFilter();
   void initialize();
 
 private:
-  void callback(const sensor_msgs::PointCloud2ConstPtr &msg1, const sensor_msgs::PointCloud2ConstPtr &msg2, const sensor_msgs::PointCloud2ConstPtr &msg3, const sensor_msgs::PointCloud2ConstPtr &msg4, const sensor_msgs::PointCloud2ConstPtr &msg5);
+  void callback(const sensor_msgs::PointCloud2ConstPtr &msg, int i);
   void topic_monitor();
 
-  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> SyncPolicyT;
   typedef pcl::PointCloud<pcl::PointXYZI> PointCloudT;
 
   ros::NodeHandle nh_;
   ros::NodeHandle private_nh_;
   ros::Publisher concat_point_pub_;
-  std::vector<std::shared_ptr<message_filters::Subscriber<sensor_msgs::PointCloud2>>> sub_;
-  std::shared_ptr<message_filters::Synchronizer<SyncPolicyT>> sync_;
   tf2_ros::Buffer tf_buffer_;
   tf2_ros::TransformListener tf_listener_;
-  std::vector<std::string> topics_, current_topics_;
+  std::vector<std::string> topics_;
   std::shared_ptr<std::thread> topic_monitor_thread_;
   volatile bool running_;
   std::mutex mutex_;
-  double wait_for_message_timeout_;
   double topic_monitor_rate_;
   std::string target_frame_;
+  std::vector<ros::Subscriber> subs_;
+  std::vector<sensor_msgs::PointCloud2ConstPtr> pointcloud2_vec_;
+  std::vector<ros::Time> callback_stamps_;
+  ros::Time old_time_;
+  ros::Duration query_duration_;
 };
-}
+}  // namespace velodyne_concat_filter
 
 #endif

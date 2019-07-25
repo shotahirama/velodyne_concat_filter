@@ -23,17 +23,17 @@ namespace velodyne_concat_filter
 class ConcatFilterNodelet : public nodelet::Nodelet
 {
 public:
-  ConcatFilterNodelet(){
-  }
-  virtual void onInit(){
-    cf_ = std::make_shared<ConcatFilter>(getNodeHandle());
+  ConcatFilterNodelet() {}
+  virtual void onInit()
+  {
+    cf_ = std::make_shared<ConcatFilter>(getNodeHandle(), getPrivateNodeHandle());
     cf_->initialize();
   }
 
 private:
   std::shared_ptr<ConcatFilter> cf_;
 };
-}
+}  // namespace velodyne_concat_filter
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_EXPORT_CLASS(velodyne_concat_filter::ConcatFilterNodelet, nodelet::Nodelet);
