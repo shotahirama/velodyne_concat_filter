@@ -1,0 +1,13 @@
+<launch>
+  <arg name="manager_name" default="concat_filter_nodelet_manager"/>
+  <arg name="topic_monitor_rate" default="10"/>
+  <arg name="target_frame" default="base_link"/>
+  <arg name="velodyne_topics" default="[/velodyne_front/velodyne_points, /velodyne_top/velodyne_points]"/>
+
+  <node pkg="nodelet" type="nodelet" name="$(arg manager_name)" args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="velodyne_concat_filter_nodelet" args="load velodyne_concat_filter/ConcatFilterNodelet $(arg manager_name)">
+    <rosparam param="velodyne_topics" subst_value="True">$(arg velodyne_topics)</rosparam>
+    <param name="topic_monitor_rate" value="$(arg topic_monitor_rate)"/>
+    <param name="target_frame" value="$(arg target_frame)"/>
+  </node>
+</launch>

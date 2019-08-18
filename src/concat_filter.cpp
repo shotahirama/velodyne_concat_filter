@@ -43,8 +43,8 @@ void ConcatFilter::initialize()
   assert(topics_.size() > 0);
   if (!private_nh_.getParam("topic_monitor_rate", topic_monitor_rate_)) {
     topic_monitor_rate_ = 10;
-    query_duration_ = ros::Duration(1.0 / topic_monitor_rate_);
   }
+  query_duration_ = ros::Duration(1.0 / topic_monitor_rate_);
   if (!private_nh_.getParam("target_frame", target_frame_)) {
     target_frame_ = "base_link";
   }
@@ -83,7 +83,7 @@ void ConcatFilter::topic_monitor()
             if (source_frame[0] == '/') {
               source_frame.erase(source_frame.begin());
             }
-            const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform(target_frame_, source_frame, ros::Time(0), ros::Duration(0.1));
+            const geometry_msgs::TransformStamped transformStamped = tf_buffer_.lookupTransform(target_frame_, source_frame, ros::Time(0), ros::Duration(0.01));
             sensor_msgs::PointCloud2 transform_cloud;
             pcl_ros::transformPointCloud(tf2::transformToEigen(transformStamped.transform).matrix().cast<float>(), pc, transform_cloud);
             pcl::fromROSMsg(transform_cloud, *clouds[i]);
@@ -95,7 +95,7 @@ void ConcatFilter::topic_monitor()
       }
     } catch (tf2::TransformException &ex) {
       ROS_ERROR("%s", ex.what());
-      return;
+      continue;
     }
     if (concat_cloud->points.size() > 0) {
       sensor_msgs::PointCloud2 pubmsg;
